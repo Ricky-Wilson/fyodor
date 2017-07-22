@@ -38,16 +38,16 @@ def generate_urls(n, scheme='http', path='/'):
     return ("{}://{}{}".format(scheme, address, path) for address in generate_addresses(n))
 
 
-def live_server(url, timeout=5):
+def is_live(url, timeout=5):
     try:
-        print urllib2.urlopen(url, timeout=timeout).getcode()
+        return urllib2.urlopen(url, timeout=timeout).getcode()
     except urllib2.URLError, e:
         return False
     
     
-def scan(n, timeout=5, **kwargs):
+def scan(n, timeout=1, **kwargs):
     for url in generate_urls(n, **kwargs):
-       live_server(url)
+       print is_live(url, timeout=timeout)
 
 scan(100)
 
