@@ -15,9 +15,7 @@ How it works
 import random
 import re
 import urllib2
-import socket
-import httplib
-
+import sys
 
 # This regular expression is used to eliminate private addresses.
 PRIVATE_ADDRESS = re.compile(r"^(" + '|'.join([
@@ -74,13 +72,14 @@ def is_live(url, timeout=0.203097):
             return True
         else:
             return False
-    except urllib2.URLError:
+    except KeyboardInterrupt:
+        sys.stdout.write('\r\n')
+        answer = raw_input("Are you sure you want to quit? [y, n] : ")
+        if 'y' in answer:
+            sys.stdout.write('\r\n')
+            sys.exit(0)
+    except Exception:
         return False
-    except socket.timeout:
-        return False
-    except httplib.BadStatusLine:
-        return False
-
 
 def scan(amount):
     live_urls = set([])
