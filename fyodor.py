@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 
 """Find random web servers on the net.
 
@@ -13,6 +15,9 @@ How it works
 import random
 import re
 import urllib2
+import socket
+import httplib
+
 
 # This regular expression is used to eliminate private addresses.
 PRIVATE_ADDRESS = re.compile(r"^(" + '|'.join([
@@ -37,37 +42,21 @@ def is_ip_private(address):
     '''
     return PRIVATE_ADDRESS.match(address)
 
-
-def generate_addresses(amount):
-    """ Generate a set list of random IPv4 addresses.
-
-    **parameters**
-    :param amount: The number of addresses to generate.
-    :type amount: int
-    :return: a set list of random IPv4 addresses.
-    :rtype: set
-    """
-    addresses = set([])
-    while len(addresses) is not amount:
+def generate_address():
+    result = []
+    while len(result) is not 1:
         address = '.'.join(str(random.randrange(256)) for _ in range(4))
-        if not is_ip_private(address):
-            addresses.add(address)
-    return addresses
+        if is_ip_private(address):
+            pass
+        else:
+            result.append(address)
+    return result.pop()
+    
 
+def generate_url(scheme='http', path='/'):
+    return "{}://{}{}".format(scheme, generate_address(), path)
 
-def generate_urls(amount, scheme='http', path='/'):
-    """ Generate a list of random URL's.
-
-    **parameters**
-    :param amount: The number of URL's to generate.
-    :param scheme: the url scheme to use, the default scheme is http.
-    :param path: the url path to use, default is "/" aka root
-    :rtype: generator
-    """
-    return ("{}://{}{}".format(scheme, address, path) for address in generate_addresses(amount))
-
-
-def is_live(url, timeout=3):
+def is_live(url, timeout=0.203097):
     """Check if a URL is live.
 
     This function uses urllib2's getcode method to check
@@ -82,17 +71,24 @@ def is_live(url, timeout=3):
     """
     try:
         if urllib2.urlopen(url, timeout=timeout).getcode() is 200:
-            return
+            return True
         else:
             return False
     except urllib2.URLError:
         return False
+    except socket.timeout:
+        return False
+    except httplib.BadStatusLine:
+        return False
 
 
-def scan(amount, timeout=1, **kwargs):
-    for url in generate_urls(amount, **kwargs):
-        if is_live(url, timeout=timeout):
+def scan(amount):
+    live_urls = set([])
+    while len(live_urls) is not amount:
+        url = generate_url()
+        if is_live(url):
             print url
+            live_urls.add(url)
+    return live_urls
 
-if __name__ == '__main__':
-    scan(100)
+scan(10)
